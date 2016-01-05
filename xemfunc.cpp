@@ -19,110 +19,84 @@
 
 using namespace std;
 
-const int shift[7]={0,1,1,2,2,1,1};
+const int shift[7] = {0, 1, 1, 2, 2, 1, 1};
 
-bool Xem(char* PASSWD,const char *infile,const char *outfile) {
+bool xem(char* passwd, FILE *fin, FILE *fout) {
 
-	char* MD5_HASH;
-	unsigned int B[20];
-	unsigned int NOW_KEY=0,MYS1=0,MYS2=0;
-	unsigned int BUFF = 0;
+	char* md5_hash;
+	unsigned int b[20];
+	unsigned int now_key = 0, mys1 = 0, mys2 = 0;
+	unsigned int buff = 0;
 
-	MD5_HASH=MDString(PASSWD);
-	B[0]=0;
-	for (int i=1; i<32; i+=2)
+	md5_hash = MDString(passwd);
+	b[0] = 0;
+	for (int i = 1; i < 32; i += 2)
 	{
-		int BT1=(int)MD5_HASH[i];
-		int BT2=(int)MD5_HASH[i+1];
+		int bt1 = (int)md5_hash[i];
+		int bt2 = (int)md5_hash[i + 1];
 		
-		if (BT2<97) B[++B[0]]=BT2-48; else B[++B[0]]=BT2-87;
-		if (BT1<97) B[B[0]]+=(BT1-48) << 4; else B[B[0]]+=(BT1-87) << 4;
+		if (bt2 < 97) b[++b[0]] = bt2 - 48; else b[++b[0]] = bt2 - 87;
+		if (bt1 < 97) b[b[0]] += (bt1 - 48) << 4; else b[b[0]] += (bt1 - 87) << 4;
 	}
 
-	MD5_HASH=MDString(MD5_HASH);
-	for (int i=1; i<32; i+=2)
+	md5_hash = MDString(md5_hash);
+	for (int i = 1; i < 32; i += 2)
 	{
-		int BT1=(int)MD5_HASH[i];
-		int BT2=(int)MD5_HASH[i+1];
-		int TMP=0;
+		int bt1 = (int)md5_hash[i];
+		int bt2 = (int)md5_hash[i + 1];
+		int tmp = 0;
 		
-		if (BT2<97) TMP=BT2-48; else TMP=BT2-87;
-		if (BT1<97) TMP+=(BT1-48) << 4; else TMP+=(BT1-87) << 4;
+		if (bt2 < 97) tmp = bt2 - 48; else tmp = bt2 - 87;
+		if (bt1 < 97) tmp += (bt1 - 48) << 4; else tmp += (bt1 - 87) << 4;
 
-		MYS1 ^= TMP;
+		mys1 ^= tmp;
 	}
 
-	MD5_HASH=MDString(MD5_HASH);
-	for (int i=1; i<32; i+=2)
+	md5_hash = MDString(md5_hash);
+	for (int i = 1; i < 32; i += 2 )
 	{
-		int BT1=(int)MD5_HASH[i];
-		int BT2=(int)MD5_HASH[i+1];
-		int TMP=0;
+		int bt1 = (int)md5_hash[i];
+		int bt2 = (int)md5_hash[i + 1];
+		int tmp = 0;
 		
-		if (BT2<97) TMP=BT2-48; else TMP=BT2-87;
-		if (BT1<97) TMP+=(BT1-48) << 4; else TMP+=(BT1-87) << 4;
+		if (bt2 < 97) tmp = bt2 - 48; else tmp = bt2 - 87;
+		if (bt1 < 97) tmp += (bt1 - 48) << 4; else tmp += (bt1 - 87) << 4;
 
-		MYS2 ^= TMP;
+		mys2 ^= tmp;
 	}
 	//convert MD5 String
 	//init
-	
-	FILE *INPUT = fopen(infile,"rb");
-	FILE *OUTPUT = fopen(outfile,"wb");
 	int insize;
 
-	if (INPUT == NULL || OUTPUT == NULL) return 0;
+	if (fin == NULL || fout == NULL) return 0;
 
-	while (insize = fread(&BUFF,1,4,INPUT))
+	while (insize = fread(&buff, 1, 4, fin))
 	{
-		for (int i=1; i<=6; i++)
+		for (int i =1; i <=6; i++)
 		{
-			int T=B[i]<<=shift[i];
-			B[i]=(((((T & 0x300)>>8) | T)+i) & MASK);
-			NOW_KEY ^= B[i];			
+			int T =b[i] <<= shift[i];
+			b[i] = (((((T & 0x300) >> 8) | T) + i) & MASK);
+			now_key ^= b[i];
 		}
-		for (int i=7; i<=12; i++)
+		for (int i = 7; i <= 12; i++)
 		{
-			int T=(B[i] & (1<<(shift[i]-1)))<<8;
-			B[i]=(((B[i] | T)+i) & MASK);
-			NOW_KEY ^= B[i];
+			int T = (b[i] & (1 << (shift[i] - 1))) << 8;
+			b[i] = (((b[i] | T) + i) & MASK);
+			now_key ^= b[i];
 		}
 		//shift and change
-		B[13] ^= 13; B[15] ^= (~MYS1 & MASK);
- 		B[14] ^= 14; B[16] ^= (~MYS2 & MASK);
-		NOW_KEY ^= (B[13]^B[14]^B[15]^B[16]) & MASK;
+		b[13] ^= 13; b[15] ^= (~mys1 & MASK);
+ 		b[14] ^= 14; b[16] ^= (~mys2 & MASK);
+		now_key ^= (b[13] ^ b[14] ^ b[15] ^ b[16]) & MASK;
 
-		BUFF ^= NOW_KEY; // of improtance
-		if (!fwrite(&BUFF,1,insize,OUTPUT)) return 0;
+		buff ^= now_key; // of improtance
+		if (!fwrite(&buff, 1, insize, fout)) return 0;
 
-		MYS1 ^= B[6] ^ B[9];
-		MYS2 ^= B[7] ^ B[8];
+		mys1 ^= b[6] ^ b[9];
+		mys2 ^= b[7] ^ b[8];
 
-		BUFF = 0; //important clear!!
+		buff = 0; //important clear!!
 	}
-	
-	fclose(INPUT);
-	fclose(OUTPUT);
 
 	return 1;
 }
-
-bool xem_encode(char *PASSWD,const char *infile,const char *outfile) {
-
-	bool flag = Xem(PASSWD,infile,".xem.tmp");
-	flag &= base64_file_encode(".xem.tmp",outfile);
-	remove(".xem.tmp"); //try to remove tmp file
-	if (flag) return 1; else return 0;
-}
-
-
-bool xem_decode(char *PASSWD,const char *infile,const char *outfile) {
-
-	bool flag = base64_file_decode(infile,".xem.tmp");
-	flag &= Xem(PASSWD,".xem.tmp",outfile);
-	remove(".xem.tmp"); //try to remove tmp file
-	if (flag) return 1; else return 0;
-}
-
-
-

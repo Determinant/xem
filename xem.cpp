@@ -25,29 +25,40 @@ void showhelp() {
 	printf(">>> Copyright (C) 2010 Ted Yin\n");
 	printf(">>> License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n");
 	printf(">>> There is NO WARRANTY, to the extent permitted by law.\n");
-	printf("\n>>> Usage: -e for Encode (-d for Decode) SrcNAME DestNAME\n");
+	printf("\n>>> Usage: `xem <src_file> <dest_file>` or simply `xem` (stdio)\n");
 	printf("\n");
 }
 
-int main(int argc,char **argv) {
+extern bool xem(char *, FILE *, FILE *);
 
-	char pwd[MAXP],rpwd[MAXP],*ptr = pwd,*rptr = rpwd;
-	int mode,res,inc;
+int main(int argc, char **argv) {
 
-	if (argc != 4) {showhelp(); return 0 ;}
-	if (!strcmp(argv[1],"-e")) mode = 1;
-		else if (!strcmp(argv[1],"-d")) mode = 0;
-			else {showhelp(); return 0;}
-	
-	if (!strlen(argv[2]) || !strlen(argv[3])) {showhelp(); return 0;}
+	char pwd[MAXP], rpwd[MAXP], *ptr = pwd, *rptr = rpwd;
+    FILE *fin, *fout;
+	int mode, res, inc;
 
+	if (argc == 3) 
+    {
+        fin = fopen(argv[1], "rb");
+        fout = fopen(argv[2], "wb");
+    }
+    else if (argc == 1)
+    {
+        fin = stdin;
+        fout = stdout;
+    }
+    else
+    {
+        showhelp();
+        return 1;
+    }
 
 	struct termios sg; 
 	tcgetattr(STDIN_FILENO, &sg); /* get settings */
 	sg.c_lflag &= ~ECHO; /* turn echo off */ 
-	tcsetattr(STDIN_FILENO,TCSAFLUSH,&sg); /* set settings */
+	tcsetattr(STDIN_FILENO, TCSAFLUSH, &sg); /* set settings */
 
-	printf("Enter password >>> ");
+	fprintf(stderr, "Enter password >>> ");
 	inc = 0;
 	while ((*ptr++ = getc(stdin)) != '\n'); 
 		if (inc++ == MAXP) 
@@ -56,9 +67,9 @@ int main(int argc,char **argv) {
 			return 0;
 		}
 	*(ptr - 1) = 0;
-	printf("\n");
+	fprintf(stderr, "\n");
 
-	printf("Repeat>>> ");
+	fprintf(stderr, "Repeat>>> ");
 	inc = 0;
 	while ((*rptr++ = getc(stdin)) != '\n')
 		if (inc++ == MAXP) 
@@ -67,17 +78,17 @@ int main(int argc,char **argv) {
 			return 0;
 		}
 	*(rptr - 1) = 0;
-	printf("\n");
+	fprintf(stderr, "\n");
 	
 	tcgetattr(STDIN_FILENO, &sg); /* get settings */
 	sg.c_lflag |= ECHO; /* turn echo on */
-	tcsetattr(STDIN_FILENO,TCSAFLUSH,&sg); /* set settings */
+	tcsetattr(STDIN_FILENO, TCSAFLUSH, &sg); /* set settings */
 
-	if (strcmp(pwd,rpwd)) {printf("Passwords are not the same!\n"); return 0;}
-	if (mode == 1) res = xem_encode(pwd,(const char*)argv[2],(const char*)argv[3]);
-		else res = xem_decode(pwd,(const char*)argv[2],(const char *)argv[3]);
-
-	if (!res) printf("Failed!\n");
-
-	return 0;
+	if (strcmp(pwd, rpwd))
+    {
+        printf("Passwords are not the same!\n");
+        return 0;
+    }
+	res = xem(pwd, fin, fout);
+	return !res;
 }
