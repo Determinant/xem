@@ -1,1 +1,1 @@
-This ancient program is obsolete and was written when I was in high school. If you want to use it to encrypt your data, please checkout `stdio` branch. The encryption is done by xor-ing the byte stream with the generated pseudo-random sequence according to the password, so decryption is the same process as encryption.
+This ancient program is obsolete and was written when I was in high school. The encryption is done by xor-ing the byte stream with the generated "pseudo-random" sequence according to the password, so decryption is the same process as encryption.

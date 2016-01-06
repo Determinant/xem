@@ -7,7 +7,7 @@
 #@note:CST in $Date means China Standard Time instead of Central Standard Time
 
 .PHONY: clean
-CC = clang
+CC = gcc #clang
 xem: xem.o xemfunc.o
 	$(CC) *.o -o xem -Wall
 
